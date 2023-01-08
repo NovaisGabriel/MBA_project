@@ -86,6 +86,47 @@ Vamos modificar apenas alguns pontos do arquivo yaml do airflow:
 -> Linha 379: Para adicionar o fernetKey, precisamos primeiro criar um arquivo dentro de airflow para gerar esta chave, através do fernet. O arquivo python, após rodar gerará uma chave. O conteúdo do python está em config. Colar o valor da chave no til da linha.
 
 -> Linha 956: Na parte de Default User, trocar para as suas informações.
+-> Linha 987: Trocar type por LoadBalancer. Sem isso, só conseguiremos acessar o link do webserver para ver a UI do airflow através de configurações manuais.
 
 -> Linha 1507: Na parte de redis utilizaremos false.
 -> Linha 1782: Utilizar o git sync, fazendo ficar true.
+
+Antes de fazer mais modificações dar um push com branch dev no git pra salvar e preparar para quando futuras modificações ocorrerem o airflow identificar o evento. Entrar na branch dev do github e coletar o link https do repositório.
+
+-> Linha 1788: colar link do repositório.
+-> Linha 1789: trocar por branch dev.
+-> Linha 1796: trocar pelas nossas dags, com o path "dags". 
+
+Feitas as modificações faremos o deploy. Vamos rodar o seguinte código: helm install airflow apache-airflow/airflow -f airflow/myvalues.yaml -n airflow --debug
+
+Caso tenha dado algum erro basta desinstalar com o código: helm uninstall airflow -n airflow. Naõ esquecer de deletar os load balancers também, com o código: kubectl delete svc airflow-websever -n airflow. Deletar também o postgres, com o código: kubectl delete pvc data-airflow-postgresql-0 -n airflow.
+
+Verificaremos se está tudo certo: kubectl get pods -n airflow
+Para pegar o link do serviço do airflow rodar kubectl get svc -n airflow. Estará na coluna External-IP. Não esquecer de adicionar a porta :8080. Costuma demorar uns minutinhos até ficar disponível.
+
+No Login do airflow utilizar as credenciais que foram definidas no arquivo myvalues.yaml. Após entrar no airflow devemos modificar modificar a senha de entrada no serviço, pois a senha de início é fraca "admin". Refazer a autenticação com nova senha.
+
+Entrar em Admin, depois Connections e adicionar no botão de mais (+). Escolher no campo connection id um nome, como "my_aws". Escolher no tipo, Amazon web services. Adicionar as credenciais da AWS. Estará tudo pronto para triggar as suas DAGs.
+
+12) Deploy do Spark:
+
+Primeiro devemos criar um namespace rodando: kubectl create namespace processing
+Criaremos dentro da subpasta criada em kubernetes com nome spark, um outra pasta chamada jars e um dockerfile fora dela. Muito cuidado com as versões das libs, em especial quando se trata de spark, pois isso é muito crítico.
+
+Com isso vamos buildar o dockerfile. Rode o comando: "docker build -t gabrielnovais/spark-operator:v3.0.0-aws .". Esteja com o docker desktop aberto para verificar que localmente a imagem será criada e é interessante que já esteja logado por lá. É preciso fazer o login da sua conta no docker. Realize o login com o código: docker login -u gabrielnovais -p minhasenha. Vamos fazer o push da imagem para ficar disponível publicamente, com o código a seguir: docker push gabrielnovais/spark-operator:v3.0.0-aws.
+
+Feito o push pode verificar no docker hub que a imagem estará lá. Agora o que precisaremos será coletar as funções jars no maven. OS links de download dos 4 arquivos jars são:
+
+Em https://mvnrepository.com/:
+
+-> aws-java-sdk: https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar
+-> hadoop: https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.7.3/hadoop-aws-2.7.3.jar
+-> Delta: https://repo1.maven.org/maven2/io/delta/delta-core_2.12/1.0.0/delta-core_2.12-1.0.0.jar
+-> spark-sql-kafka: https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.0.1/spark-sql-kafka-0-10_2.12-3.0.1.jar
+
+Precisamos então criar um service account no kubernetes spark. Para isso rode o código: kubectl create serviceaccount spark -n processing
+
+Para entender as roles devemos verificar quais são as disponíveis. Para isso rode: kubectl get clusterroles --all-namespaces. Vamos criar uma role, para isso rode: kubectl create clusterrolebinding spark-role-binding --clusterrole=edit --serviceaccount=processing:spark -n processing
+
+Precisamos criar um operator (responsável por criar novos recursos no kubernetes) para utilizar o spark application no kubernetes. Para fazer isso precisamos antes utilizar o helm: helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator. Depois de um update no helm com helm repo update. Então poderemos fazer a instalação do spark operator com o código: helm install spark spark-operator/spark-operator -n processing. Para verificar se o spark operator for deployado então é só fazer helm ls -n processing. E depois de uma olhada no kubectl get pods -n processing
+
