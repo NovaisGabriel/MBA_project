@@ -1,0 +1,1 @@
+eksctl delete cluster --region us-east-2 --name gabrielteste --color=fabulous
