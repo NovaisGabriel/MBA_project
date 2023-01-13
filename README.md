@@ -108,6 +108,8 @@ No Login do airflow utilizar as credenciais que foram definidas no arquivo myval
 
 Entrar em Admin, depois Connections e adicionar no botão de mais (+). Escolher no campo connection id um nome, como "my_aws". Escolher no tipo, Amazon web services. Adicionar as credenciais da AWS. Estará tudo pronto para triggar as suas DAGs.
 
+Não esquecer de adicionar na lista de variáveis dentro do airflow, na parte de Admin as mesmas credenciais com nomes de aws_access_key_id e aws_secret_access_key.
+
 12) Deploy do Spark:
 
 Primeiro devemos criar um namespace rodando: kubectl create namespace processing
@@ -128,5 +130,97 @@ Precisamos então criar um service account no kubernetes spark. Para isso rode o
 
 Para entender as roles devemos verificar quais são as disponíveis. Para isso rode: kubectl get clusterroles --all-namespaces. Vamos criar uma role, para isso rode: kubectl create clusterrolebinding spark-role-binding --clusterrole=edit --serviceaccount=processing:spark -n processing
 
+Após criar o cluster role acima, pegue o arquivo yaml gerado e coloque na pasta do airflow, com nome: "rolebinding_for_airflow.yaml". Nele além do código que será originado, adicione o seguinte trecho de código para que o airflow tenha permissões:
+
+->  apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: airflow-spark-crb
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: spark-cluster-cr
+    subjects:
+      - kind: ServiceAccount
+        name: airflow-worker
+        namespace: airflow
+
+Após adicionar essas permissões para o airflow, devemos aplicar ao kubernetes com o código: kubectl apply -f kubernetes/airflow/rolebinding_for_airflow.yaml -n airflow. Para conseguir verificar se foi aplicado basta fazer kubectl get serviceaccount -n airflow. Veja que o ariflow-worker está presente e com o código kubectl get clusterrolebinding -n airflow estará lá também. Pode trocar o get pelo describe e adicione o nome desejado depois do nome anterior para verificar também.  
+
 Precisamos criar um operator (responsável por criar novos recursos no kubernetes) para utilizar o spark application no kubernetes. Para fazer isso precisamos antes utilizar o helm: helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator. Depois de um update no helm com helm repo update. Então poderemos fazer a instalação do spark operator com o código: helm install spark spark-operator/spark-operator -n processing. Para verificar se o spark operator for deployado então é só fazer helm ls -n processing. E depois de uma olhada no kubectl get pods -n processing
 
+No bucket S3 devemos ter 3 pastas, uma para landing (bronze), ou para processar (prata) e outra para entregar (ouro), e uma pasta com os códigos em python com spark (codes). O user guide do spark-operator está em https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/master/docs/user-guide.md.
+
+Verifique se o segredo já foi criado com o código: kubectl describe secret aws-credentials -n processing. Caso não tenha sido, crie utilizando a chave de acesso do aws, com o seguinte código: kubectl create secret generic aws-credentials --from-literal=aws_access_key_id=meukeyid -from-literal=aws_secret_access_key=meusecretkey -n processing
+
+Desse mesmo user guide pegue o exemplo de spark operator no k8 spark-py-pi.yaml e coloque na subpasta do spark no kubernetes. Vamos realizar algumas customizações nesse arquivo:
+
+-> Linha 5: Troque para processing
+-> Linha 6: Adicione 
+    volumes:
+        - name: ivy
+          emptyDir: {}
+    sparkConf:
+        spark.jars.packages: "org.apache.hadoop-aws:2.7.3.org.apache.spark-avro_2.12:3.0.1"
+        spark.driver.extraJavaOptions: "-Divy.cache.dir=/tmp -Divy.home=/tmp"
+        spark.kubernetes.allocation.batch.size: "10"
+    hadoopConf:
+        fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+
+-> Linha 19: troque pelo endereço da sua imagem, ou seja, por "docker.io/gabrielnovais/spark-operator:v3.0.0-aws"
+
+-> Linha 21: adicionar endereço do bucket com s3a do código onde está o spark a ser executado em python, logo seria o bucket: "s3a://testekuberneteslogs/codes/spark-operator-processing-job-batch.py"
+
+-> Linha 22: trocar versão para 3.0.0
+-> Linha 24: trocar restart policy para o tipo Never, e deletar as linhas relacionadas.
+
+-> Linha 25: dentro de driver escrever o seguinte código
+
+envSecretKeyRefs:
+    AWS_ACCESS_KEY_ID:
+        name: aws-credentials
+        key: aws_access_key_id
+    AWS_SECRET_ACCESS_KEY:
+        name: aws-credentials
+        key: aws_secret_access_key
+
+-> Linha 35: Trocar memory por "4g"
+-> Linha 37: Trocar por 3.0.0
+-> Linha 38: abaixo dessa linha cole o seguinte código
+
+volumeMounts:
+    - name: ivy
+      mountPath: /tmp
+
+-> Linha 42 repita o trecho da linha 25
+-> Linha 50 e 51: trocar por 3
+-> Linha 52: trocar por "4g"
+-> Linha 54: Trocar por 3.0.0 e adicionar o trecho da linha 38.
+
+Agora vamos realizar um deploy. Rode o código: kubectl apply -f spark-batch-operator-k8s-v1beta2.yaml -n processing. Isso vai criar o job, criando um container driver no pod e nós executores. Após o job ser completado o driver ficará com o status completed, para ver isso rode: kubexctl get pods -n processing. Verifique que agora podemos rodar o código kubectl get sparkapplication -n processing. Caso queira ver algo a mais do job olhar o comando describe do kubectl. Par coletar os logs do pod, pegue o nome do pod com o comando kubectl get pods -n processing, e depois disso rode o comando kubectl logs (nome do pod) -n processing.
+
+12) Vamos construir a pipeline toda agora
+
+Criar um namespace airflow e deployar o airflow (já feito)
+Pegue o endereço do airflow-webserver e acesse a URL para ter a UI do airflow.
+
+Dentro do airflow fazer uma nova conexão além da aws, que é a conexão com o kubernetes. Na conn id escrever um nome diferente com o kubernetes para associar (kubernetes_default por exemplo). No tipo escolher Kubernetes Cluster Connection. Selecionar a caixa de "In cluster configuration". Agora basta criar.
+
+Os dados serão consumidos do bucket da landing zone. Os dados já devem estar lá para que possam ser utilizados. Para cada execução de código spark, precisamos utilizar um arquivo python com o spark e um yaml associado ao job, fora o python da própria DAG. Os códigos sparks que de fato executarão as transformações ficam dentro da pasta pyspark em dags. Essa pasta precisa estar no bucket que contém o folder codes, pois é de lá que esses códigos serão puxado para o cluster kubernetes. Sobre o preenchimento da DAG, em termos de cronograma de execução, pode-se utilizar o crontab guru para consultar como realizar esse cornograma. Em cada arquivo yaml associado ao arquivo pyspark devemos ter uma estrutura similar, mudando apenas o nome base e o nome do arquivo pyspark associado.
+
+As tabelas devem ser as seguintes:
+-> dados com colunas de: pessoas, id, pits, categoria do pit, hora e minutos da visita, comprou ou não, preço, quantidade.
+-> processar dados acima para distribuir para analitics uma tabela com a seguinte estrutura por dia: qtd de pessoas identificadas, qtd de pits vendidos, visitados, valor arrecadado
+-> processar a primeira tabela de forma a gerar uma tabela de recomendação que servirá para a experiência do usuário da seguiinte forma: ids das pessoas, pits vistos, pits recomendados 
+
+Os arquivos em pyspark devem ser:
+
+-> transformar de csv para parquet e salvar na zona de processing
+-> gerar as transformações para analytics
+-> salvar tabela na zona de consumer
+-> trigar o crawler para gerar tabela no athena
+-> gerar as transformações para recomendação
+-> salvar tabela na zona de consumer
+-> trigar o crawler para gerar tabela no athena
+
+Podemos verificar o processo no airflow. Para verificar quais jobs estão rodando no cluster rode o código: kubectl get pods -n airflow --watch. Outro acompanhamento interessante seria olhar o spark application com o código: kubectl get sparkapplication -n airflow. Para acompanhar os logs de execução pegue o pod do driver por exemplo. Caso dê alguma falha por conta de recursos, é possível falhar o processo manualmente e matar os pods que estão pendentes com o kubectl delete + nome do pod.

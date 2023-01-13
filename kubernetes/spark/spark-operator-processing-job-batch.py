@@ -30,5 +30,22 @@ if __name__ == "main":
         .read
         .format("csv")
         .options(header="true", inferSchema="true", delimiter=";")
-        .load("s3a://dl-landing-zone")
+        .load("s3://testekuberneteslogs/bronze/titanic.csv")
     )
+
+    df.show()
+    df.printSchema()
+
+    (
+        df
+        .write
+        .model("overwrite")
+        .format("parquet")
+        .save("s3://testekuberneteslogs/prata/")
+    )
+
+    print("*********************")
+    print("Escrito com sucesso!")
+    print("*********************")
+
+    spark.stop()
