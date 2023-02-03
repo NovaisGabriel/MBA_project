@@ -42,5 +42,6 @@ config/chave_dashboard.txt
 config/chave_fernet.txt
 config/chave_docker_login.txt
 
+data/olist
 data/dados.csv
 data/titanic.csv

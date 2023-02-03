@@ -1,19 +1,50 @@
-# project
+# Projeto Aplicado - Engenharia de Dados - MBA/XPE
 
-Project started in January 08, 2023.
+O objetivo do projeto é o de proporcionar o tratamento de dados, armazenamento de dados processados e disponibilização de dados para duas finalidades distintas: uma focada nas análises de suporte de tomada de decisão, e outra com a finalidade de melhorar a personalização da experiência do usuário. Objetivou-se fornecer dados tratados e com valor adicionado que possa estar acessível por um DataWarehouse disponível em um serviço de Cloud permitindo extrair análises de duas naturezas distintas. A primeira natureza é um acompanhamento das métricas de desempenho do negócio. E a segunda é disponibilizar para clientes do Varejo E-commerce recomendações personalizadas. O usuário terá acesso a pelo menos uma plataforma para dar entrada a rotinas SQL para extrair informação dos dados. A maior parte da infraestrutura será construída em forma de código e estará em nuvem. O projeto deve ser concluído até Março de 2023.
+
+## Arquitetura
+
+A arquitetura construída para a solução, destaca-se na Figura 12 abaixo. Nela pode-se verificar que os dados serão distribuídos em 3 buckets no S3: um para ingestão, outro para processamento e outro para consumo. Dessa forma a estrutura de processamento formada pelo cluster Kebernetes consegue organizar os inputs e outputs e garante a transferência desses dados de maneira rápida e fácil através do AWS Glue Crawler para o serviço de DataWarehouse da AWS, o Athena, local onde os analistas poderão realizar as consultas necessárias e eventuais diligências de ações para rentabilização. A forma de construção da parte de buckets e serviços do Glue Crawler serão efetivadas por meio de estratégia IaC, conforme ferramental do Terraform.
+
+![arquitetura](imgs\arquitetura.jpg)
 
 
-etapas para construção do projeto:
+## Construção e Deploy
 
-0) Instalar chocolately (windows) para realizar algumas etapas.
-1) Criar repositório no github
-2) Instalar o Rony. Link: https://github.com/A3Data/rony
-3) Utilizar o Rony para construir as principais pastas e arquivos: rony new "nome do projeto"
-4) Instalar o eksctl command line utility. Link: https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+As etapas para construção do projeto e seu deploy na cloud da AWS, de acordo com a arquitetura descrita acima, segue no roteiro abaixo:
 
-5) Configurar chaves de acesso e região com o CLI da AWS: aws configure
+### 1. Ferramentas de Ambiente:
 
-6) Criar um cluster kubernetes na aws com o comando: eksctl create cluster --name=gabrielteste --managed --instance-types=m5.large --spot --nodes-min=2 --nodes-max=4 --region=us-east-2 --alb-ingress-access --node-private-networking --full-ecr-access --nodegroup-name=ng-gabrielteste --color=fabulous
+Instalar chocolately (windows) para realizar algumas etapas.
+
+Criar repositório no github
+
+Instalar o Rony. Link: https://github.com/A3Data/rony
+
+Utilizar o Rony para construir as principais pastas e arquivos: rony new "nome do projeto"
+
+Instalar o eksctl command line utility. Link: https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+
+### 2. Configurar chaves de acesso e região com o CLI da AWS: aws configure
+
+Criar um cluster kubernetes na aws com o comando:
+
+```sh
+eksctl create cluster \
+--name=gabrielteste \
+--managed \
+--instance-types=m5.large \
+--spot \
+--nodes-min=2 \
+--nodes-max=4 \
+--region=us-east-2 \
+--alb-ingress-access \
+--node-private-networking \
+--full-ecr-access \
+--nodegroup-name=ng-gabrielteste \
+--color=fabulous
+```
+
 obs: o eksctl roda utilzando o AWS CloudFormation que é "um serviço que fornece aos desenvolvedores e empresas uma forma fácil de criar um conjunto de recursos relacionados da AWS e de terceiros para provisioná-los e gerenciá-los de forma organizada e previsível". Para verificar a criação do cluster entre na AWS dentro de CloudFormation e verifique dentro da região selecionada. É possivel olhar também dentro do EKS na AWS.
 
 7) Para confirmar a criação do cluster, digite os comandos: kubectl get nodes ou kubectl get namespaces.
