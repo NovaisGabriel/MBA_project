@@ -17,12 +17,12 @@ locals {
     Project      = "Datalake"
     ManagedBy    = "Terraform"
     Department   = "systems",
-    Provider     = "A3DATA",
+    Provider     = "Gabriel",
     Owner        = "Data Engineering"
     BusinessUnit = "Data"
     Billing      = "Infrastructure"
     Environment  = terraform.workspace
-    UserEmail    = "rony@a3data.com.br"
+    UserEmail    = "gabrieel.noavsi@gmail.com"
   }
 }
 
