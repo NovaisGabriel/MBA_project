@@ -1,5 +1,5 @@
 variable "region_id" {
-  default = "us-east-1"
+  default = "us-east-2"
 }
 
 variable "prefix" {
@@ -7,7 +7,7 @@ variable "prefix" {
 }
 
 variable "account" {
-  default = 123456789
+  default = 715036709715
 }
 
 # Prefix configuration and project common tags
@@ -51,9 +51,9 @@ variable "bucket_paths" {
   description = "Paths to S3 bucket used by the crawler"
   type        = list(string)
   default = [
-    "s3://landing-zone-123456789",
-    "s3://processing-zone-123456789",
-    "s3://delivery-zone-123456789"
+    "s3://landing-zone-715036709715",
+    "s3://processing-zone-715036709715",
+    "s3://delivery-zone-715036709715"
   ]
 }
 
