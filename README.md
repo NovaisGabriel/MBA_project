@@ -21,6 +21,8 @@ Para conseguir ter as estruturas de buckets e glue crawler na cloud da AWS, é n
 
 OBS: É de extrema importância que no secrets do repositório seja realizado a inserção de duas chaves de segurança para a conexão com a cloud da AWS. As duas chaves devem se chamar de AWS_SECRET_ACCESS_KEY e AWS_ACCESS_KEY_ID. Os valores a serem preechidos devem ser o mesmo que o disponibilizado pela conta na AWS.
 
+OBS: O bucket de logs do terraform precisa estar criado no S3 antes de inciar o provisionamento. O nome do bucket deve ser: terraform-logs-gabriel
+
 <hr/>
 
 ## 1. Ferramentas de Ambiente:
