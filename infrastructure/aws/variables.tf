@@ -56,8 +56,3 @@ variable "bucket_paths" {
     "s3://delivery-zone-715036709715"
   ]
 }
-
-variable "bucket_functions" {
-  description = "Create S3 bucket for lambda functions"
-  default     = "temp-functions-rony"
-}
