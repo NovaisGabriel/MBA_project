@@ -6,7 +6,7 @@ O objetivo do projeto é o de proporcionar o tratamento de dados, armazenamento 
 
 A arquitetura construída para a solução, destaca-se na Figura 12 abaixo. Nela pode-se verificar que os dados serão distribuídos em 3 buckets no S3: um para ingestão, outro para processamento e outro para consumo. Dessa forma a estrutura de processamento formada pelo cluster Kebernetes consegue organizar os inputs e outputs e garante a transferência desses dados de maneira rápida e fácil através do AWS Glue Crawler para o serviço de DataWarehouse da AWS, o Athena, local onde os analistas poderão realizar as consultas necessárias e eventuais diligências de ações para rentabilização. A forma de construção da parte de buckets e serviços do Glue Crawler serão efetivadas por meio de estratégia IaC, conforme ferramental do Terraform.
 
-![arquitetura](imgs\arquitetura.jpg)
+![arquitetura](imgs/arquitetura.jpg)
 
 
 # Construção e Deploy

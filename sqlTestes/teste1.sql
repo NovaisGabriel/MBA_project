@@ -1,0 +1,1 @@
+Select * from dl_rocessing_zone.aggregate
