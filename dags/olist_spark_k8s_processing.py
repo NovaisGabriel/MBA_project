@@ -52,6 +52,7 @@ with DAG(
     )
 
     converte_parquet_monitor = SparkKubernetesSensor(
+        application_name = "teste",
         task_id = 'customer_converte_parquet_monitor',
         namespace = 'airflow',
         application_file = "{{ task_instance.xcom_pull(task_ids='converte_parquet')['metadata']['name']}}",
