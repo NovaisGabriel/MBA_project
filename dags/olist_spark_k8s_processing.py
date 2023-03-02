@@ -7,6 +7,8 @@ from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKube
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from airflow.utils.dates import days_ago
+from airflow.operators.dummy import DummyOperator
+from airflow.utils.trigger_rule import TriggerRule
 
 aws_access_key_id = Variable.get("aws_access_key_id")
 aws_secret_access_key = Variable.get("aws_secret_access_key")
@@ -27,11 +29,14 @@ default_args = {
     'max_active_runs': 1
 }
 
-def trigger_crwaler_inscricao_func():
-    glue.start_crawler(Name = 'enem_anon_crawler')
+def trigger_crawler_landing():
+    glue.start_crawler(Name = 'dl_landing_zone_crawler')
 
-def trigger_crwaler_final_func():
-    glue.start_crawler(Name = 'enem_uf_final_crawler')
+def trigger_crawler_processing():
+    glue.start_crawler(Name = 'dl_processing_zone_crawler')
+
+def trigger_crawler_delivery():
+    glue.start_crawler(Name = 'dl_delivery_zone_crawler')
 
 with DAG(
     'batch_spark_k8s',
@@ -43,6 +48,8 @@ with DAG(
     tags = ['spark', 'kubernetes', 'batch']
 ) as dag:
 
+    # Coverter
+    # --------------------------------------------------------
     customer_converte = SparkKubernetesOperator(
         task_id = 'customer_converte',
         namespace = 'airflow',
@@ -51,28 +58,124 @@ with DAG(
         do_xcom_push = True
     )
 
-    # customer_converte_monitor = SparkKubernetesSensor(
-    #     application_name = "teste",
-    #     task_id = 'customer_converte_monitor',
-    #     namespace = 'airflow',
-    #     application_file = "{{ task_instance.xcom_pull(task_ids='customer_converte')['metadata']['name']}}",
-    #     kubernetes_conn_id = "kubernetes_default"
-    # )
+    dataset_converte = SparkKubernetesOperator(
+        task_id = 'dataset_converte',
+        namespace = 'airflow',
+        application_file = 'dataset_converte_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
 
-    # converte_parquet = SparkKubernetesOperator(
-    #     task_id = 'convert_parquet',
-    #     namespace = 'airflow',
-    #     application_file = 'enem_converte_parquet.yaml',
-    #     kubernetes_conn_id = "kubernetes_default",
-    #     do_xcom_push = True
-    # )
+    items_converte = SparkKubernetesOperator(
+        task_id = 'items_converte',
+        namespace = 'airflow',
+        application_file = 'items_converte_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
 
-    # converte_parquet_monitor = SparkKubernetesSensor(
-    #     task_id = 'convert_parquet_monitor',
-    #     namespace = 'airflow',
-    #     application_file = "{{ task_instance.xcom_pull(task_ids='converte_parquet')['metadata']['name']}}",
-    #     kubernetes_conn_id = "kubernetes_default"
-    # )
+    payments_converte = SparkKubernetesOperator(
+        task_id = 'payments_converte',
+        namespace = 'airflow',
+        application_file = 'payments_converte_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    reviews_converte = SparkKubernetesOperator(
+        task_id = 'reviews_converte',
+        namespace = 'airflow',
+        application_file = 'reviews_converte_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    # Tratar
+    # --------------------------------------------------------
+    customer_trata = SparkKubernetesOperator(
+        task_id = 'customer_trata',
+        namespace = 'airflow',
+        application_file = 'customer_trata_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    dataset_trata = SparkKubernetesOperator(
+        task_id = 'dataset_trata',
+        namespace = 'airflow',
+        application_file = 'dataset_trata_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    items_trata = SparkKubernetesOperator(
+        task_id = 'items_trata',
+        namespace = 'airflow',
+        application_file = 'items_trata_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    payments_trata = SparkKubernetesOperator(
+        task_id = 'payments_trata',
+        namespace = 'airflow',
+        application_file = 'payments_trata_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    reviews_trata = SparkKubernetesOperator(
+        task_id = 'reviews_trata',
+        namespace = 'airflow',
+        application_file = 'reviews_trata_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    # Agregar
+    # --------------------------------------------------------
+
+    agg_parquet = SparkKubernetesOperator(
+        task_id = 'agg_parquet',
+        namespace = 'airflow',
+        application_file = 'agg_parquet.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    # Recomendação
+    # --------------------------------------------------------
+
+    recomendacao = SparkKubernetesOperator(
+        task_id = 'recomendacao',
+        namespace = 'airflow',
+        application_file = 'recomendacao.yaml',
+        kubernetes_conn_id = "kubernetes_default",
+        do_xcom_push = True
+    )
+
+    # Crawler triggers
+    # --------------------------------------------------------
+
+    trigger_crawler_landing_task = PythonOperator(
+        task_id = 'trigger_crawler_landing',
+        python_callable = trigger_crawler_landing
+    )
+
+    trigger_crawler_processing_task = PythonOperator(
+        task_id = 'trigger_crawler_processing',
+        python_callable = trigger_crawler_processing
+    )
+
+    trigger_crawler_delivery_task = PythonOperator(
+        task_id = 'trigger_crawler_delivery',
+        python_callable = trigger_crawler_delivery
+    )
+
+    # Others
+    # --------------------------------------------------------
+    begin = DummyOperator(task_id="begin")
+    end = DummyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
     # anonimiza_inscricao = SparkKubernetesOperator(
     #     task_id = 'anonimiza_inscricao',
@@ -89,32 +192,12 @@ with DAG(
     #     kubernetes_conn_id = "kubernetes_default"
     # )
 
-    # trigger_crwaler_inscricao = PythonOperator(
-    #     task_id = 'trigger_crwaler_inscricao',
-    #     python_callable = trigger_crwaler_inscricao_func
-    # )
-
-    # agrega_idade = SparkKubernetesOperator(
-    #     task_id = 'agrega_idade',
-    #     namespace = 'airflow',
-    #     application_file = 'enem_agrega_idade.yaml',
-    #     kubernetes_conn_id = "kubernetes_default",
-    #     do_xcom_push = True
-    # )
-
-    # agrega_idade_monitor = SparkKubernetesSensor(
-    #     task_id = 'agrega_idade_monitor',
-    #     namespace = 'airflow',
-    #     application_file = "{{ task_instance.xcom_pull(task_ids='agrega_idade')['metadata']['name']}}",
-    #     kubernetes_conn_id = "kubernetes_default"
-    # )
-    
-    # trigger_crwaler_final = PythonOperator(
-    #     task_id = 'trigger_crwaler_final',
-    #     python_callable = trigger_crwaler_final_func
-    # )
-
-    customer_converte
-    # converte_parquet >> converte_parquet_monitor >> anonimiza_inscricao >> anonimiza_inscricao_monitor
-    # anonimiza_inscricao_monitor >> trigger_crwaler_inscricao
-    # converte_parquet_monitor >> agrega_idade >> agrega_idade_monitor >> trigger_crwaler_final
+    begin>>[customer_converte, dataset_converte, items_converte, payments_converte, reviews_converte]
+    customer_converte >> customer_trata
+    dataset_converte >> dataset_trata
+    items_converte >> items_trata
+    payments_converte>> payments_trata
+    reviews_converte >> reviews_trata
+    [customer_converte, dataset_converte, items_converte, payments_converte, reviews_converte] >> trigger_crawler_landing_task
+    trigger_crawler_landing_task >> agg_parquet >> trigger_crawler_processing_task
+    trigger_crawler_processing_task >> recomendacao >> trigger_crawler_delivery_task >> end
