@@ -42,7 +42,7 @@ variable "database_names" {
   default = [
     #landing-zone
     "dl_landing_zone",
-    "dl_rocessing_zone",
+    "dl_processing_zone",
     "dl_delivery_zone"
   ]
 }
