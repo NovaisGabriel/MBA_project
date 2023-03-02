@@ -114,7 +114,7 @@ with DAG(
     #     python_callable = trigger_crwaler_final_func
     # )
 
-    customer_converte>>customer_converte_monitor
+    customer_converte
     # converte_parquet >> converte_parquet_monitor >> anonimiza_inscricao >> anonimiza_inscricao_monitor
     # anonimiza_inscricao_monitor >> trigger_crwaler_inscricao
     # converte_parquet_monitor >> agrega_idade >> agrega_idade_monitor >> trigger_crwaler_final
