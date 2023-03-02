@@ -43,61 +43,77 @@ with DAG(
     tags = ['spark', 'kubernetes', 'batch']
 ) as dag:
 
-    converte_parquet = SparkKubernetesOperator(
-        task_id = 'convert_parquet',
+    customer_converte = SparkKubernetesOperator(
+        task_id = 'customer_converte_parquet',
         namespace = 'airflow',
-        application_file = 'enem_converte_parquet.yaml',
+        application_file = 'customer_converte_parquet.yaml',
         kubernetes_conn_id = "kubernetes_default",
         do_xcom_push = True
     )
 
     converte_parquet_monitor = SparkKubernetesSensor(
-        task_id = 'convert_parquet_monitor',
+        task_id = 'customer_converte_parquet_monitor',
         namespace = 'airflow',
         application_file = "{{ task_instance.xcom_pull(task_ids='converte_parquet')['metadata']['name']}}",
         kubernetes_conn_id = "kubernetes_default"
     )
 
-    anonimiza_inscricao = SparkKubernetesOperator(
-        task_id = 'anonimiza_inscricao',
-        namespace = 'airflow',
-        application_file = 'enem_anonimiza_inscricao.yaml',
-        kubernetes_conn_id = "kubernetes_default",
-        do_xcom_push = True
-    )
+    # converte_parquet = SparkKubernetesOperator(
+    #     task_id = 'convert_parquet',
+    #     namespace = 'airflow',
+    #     application_file = 'enem_converte_parquet.yaml',
+    #     kubernetes_conn_id = "kubernetes_default",
+    #     do_xcom_push = True
+    # )
 
-    anonimiza_inscricao_monitor = SparkKubernetesSensor(
-        task_id = 'anonimiza_inscricao_monitor',
-        namespace = 'airflow',
-        application_file = "{{ task_instance.xcom_pull(task_ids='anonimiza_inscricao')['metadata']['name']}}",
-        kubernetes_conn_id = "kubernetes_default"
-    )
+    # converte_parquet_monitor = SparkKubernetesSensor(
+    #     task_id = 'convert_parquet_monitor',
+    #     namespace = 'airflow',
+    #     application_file = "{{ task_instance.xcom_pull(task_ids='converte_parquet')['metadata']['name']}}",
+    #     kubernetes_conn_id = "kubernetes_default"
+    # )
 
-    trigger_crwaler_inscricao = PythonOperator(
-        task_id = 'trigger_crwaler_inscricao',
-        python_callable = trigger_crwaler_inscricao_func
-    )
+    # anonimiza_inscricao = SparkKubernetesOperator(
+    #     task_id = 'anonimiza_inscricao',
+    #     namespace = 'airflow',
+    #     application_file = 'enem_anonimiza_inscricao.yaml',
+    #     kubernetes_conn_id = "kubernetes_default",
+    #     do_xcom_push = True
+    # )
 
-    agrega_idade = SparkKubernetesOperator(
-        task_id = 'agrega_idade',
-        namespace = 'airflow',
-        application_file = 'enem_agrega_idade.yaml',
-        kubernetes_conn_id = "kubernetes_default",
-        do_xcom_push = True
-    )
+    # anonimiza_inscricao_monitor = SparkKubernetesSensor(
+    #     task_id = 'anonimiza_inscricao_monitor',
+    #     namespace = 'airflow',
+    #     application_file = "{{ task_instance.xcom_pull(task_ids='anonimiza_inscricao')['metadata']['name']}}",
+    #     kubernetes_conn_id = "kubernetes_default"
+    # )
 
-    agrega_idade_monitor = SparkKubernetesSensor(
-        task_id = 'agrega_idade_monitor',
-        namespace = 'airflow',
-        application_file = "{{ task_instance.xcom_pull(task_ids='agrega_idade')['metadata']['name']}}",
-        kubernetes_conn_id = "kubernetes_default"
-    )
+    # trigger_crwaler_inscricao = PythonOperator(
+    #     task_id = 'trigger_crwaler_inscricao',
+    #     python_callable = trigger_crwaler_inscricao_func
+    # )
+
+    # agrega_idade = SparkKubernetesOperator(
+    #     task_id = 'agrega_idade',
+    #     namespace = 'airflow',
+    #     application_file = 'enem_agrega_idade.yaml',
+    #     kubernetes_conn_id = "kubernetes_default",
+    #     do_xcom_push = True
+    # )
+
+    # agrega_idade_monitor = SparkKubernetesSensor(
+    #     task_id = 'agrega_idade_monitor',
+    #     namespace = 'airflow',
+    #     application_file = "{{ task_instance.xcom_pull(task_ids='agrega_idade')['metadata']['name']}}",
+    #     kubernetes_conn_id = "kubernetes_default"
+    # )
     
-    trigger_crwaler_final = PythonOperator(
-        task_id = 'trigger_crwaler_final',
-        python_callable = trigger_crwaler_final_func
-    )
+    # trigger_crwaler_final = PythonOperator(
+    #     task_id = 'trigger_crwaler_final',
+    #     python_callable = trigger_crwaler_final_func
+    # )
 
-    converte_parquet >> converte_parquet_monitor >> anonimiza_inscricao >> anonimiza_inscricao_monitor
-    anonimiza_inscricao_monitor >> trigger_crwaler_inscricao
-    converte_parquet_monitor >> agrega_idade >> agrega_idade_monitor >> trigger_crwaler_final
+    customer_converte
+    # converte_parquet >> converte_parquet_monitor >> anonimiza_inscricao >> anonimiza_inscricao_monitor
+    # anonimiza_inscricao_monitor >> trigger_crwaler_inscricao
+    # converte_parquet_monitor >> agrega_idade >> agrega_idade_monitor >> trigger_crwaler_final
