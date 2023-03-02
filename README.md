@@ -225,10 +225,15 @@ kubectl get all -n airflow
 
 9. Vamos adicionar o helm chart com o seguinte comando:
 
+Opção 1:
 ```sh
 helm repo add apache-airflow https://airflow.apache.org
 ```
-
+Opção 2 (funcionou)
+```sh
+helm repo add airflow-stable https://airflow-helm.github.io/charts
+```
+Realizar um update no repositório do helm:
 ```sh
 helm repo update
 ```
@@ -241,8 +246,9 @@ cd kubernetes
 
 11. Rodar o código para adicionar arquivo yaml oficial do apache airflow:
 
+Opção 1 e 2:
 ```sh
-helm show values apache-airflow/airflow > airflow/myvalues.yaml
+helm show values apache-airflow/airflow > airflow/default.yaml
 ```
 
 12. Criar na root do projeto uma nova pasta de dags. Para estudar e realizar testes é possível criar uma task de exemplo com o link: https://airflow.apache.org/docs/apache-airflow/stable/tutorial/taskflow.html
@@ -277,29 +283,38 @@ OBS: Antes de fazer mais modificações dar um push com branch dev no git pra sa
 
 14. Feitas as modificações faremos o deploy. Vamos rodar o seguinte código:
 
+Opção 1:
 ```sh
-helm install airflow apache-airflow/airflow \
--f airflow/myvalues.yaml \
--n airflow \ 
---debug
+helm install airflow apache-airflow/airflow -f airflow/myvalues.yaml -n airflow --debug
 ```
 
-Caso tenha dado algum erro basta desinstalar com o código:
+Opção 2:
+```sh
+helm install airflow airflow-stable/airflow --values airflow/config_values.yaml --namespace airflow --debug
+```
+
+No caso de ter dado erro, o debug pode não ajudar muito, então rodar o seguinte código para apurar o erro:
 
 ```sh
- helm uninstall airflow -n airflow.
+kubectl -n airflow get events --sort-by='{.lastTimestamp}'
+```
+
+Para desinstalar usar o código:
+
+```sh
+ helm uninstall airflow -n airflow
 ```
 
 Não esquecer de deletar os load balancers também, com o código:
 
 ```sh
-kubectl delete svc airflow-websever -n airflow.
+kubectl delete svc airflow-websever -n airflow
 ```
 
 Deletar também o postgres, com o código:
 
 ```sh
-kubectl delete pvc data-airflow-postgresql-0 -n airflow.
+kubectl delete pvc data-airflow-postgresql-0 -n airflow
 ```
 
 Verificaremos se está tudo certo:
@@ -315,7 +330,10 @@ kubectl get svc -n airflow
 ```
 
 Estará na coluna External-IP. Não esquecer de adicionar a porta :8080. Costuma demorar uns minutinhos até ficar disponível.
-
+Na opção 2, podemos acessar o link 127.0.0.1:8080 depois que rodar o seguinte código:
+```sh
+kubectl port-forward svc/airflow-web 8080:8080 --namespace airflow
+```
 15. No Login do airflow utilizar as credenciais que foram definidas no arquivo myvalues.yaml. Após entrar no airflow devemos modificar modificar a senha de entrada no serviço, pois a senha de início é fraca "admin". Refazer a autenticação com nova senha.
 
 16. Entrar em Admin, depois Connections e adicionar no botão de mais (+). Escolher no campo connection id um nome, como "my_aws". Escolher no tipo, Amazon web services. Adicionar as credenciais da AWS. Estará tudo pronto para triggar as suas DAGs.
