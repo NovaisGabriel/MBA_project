@@ -44,16 +44,16 @@ with DAG(
 ) as dag:
 
     customer_converte = SparkKubernetesOperator(
-        task_id = 'customer_converte_parquet',
+        task_id = 'customer_converte',
         namespace = 'airflow',
         application_file = 'customer_converte_parquet.yaml',
         kubernetes_conn_id = "kubernetes_default",
         do_xcom_push = True
     )
 
-    converte_parquet_monitor = SparkKubernetesSensor(
+    customer_converte_monitor = SparkKubernetesSensor(
         application_name = "teste",
-        task_id = 'customer_converte_parquet_monitor',
+        task_id = 'customer_converte_monitor',
         namespace = 'airflow',
         application_file = "{{ task_instance.xcom_pull(task_ids='customer_converte')['metadata']['name']}}",
         kubernetes_conn_id = "kubernetes_default"
@@ -114,7 +114,7 @@ with DAG(
     #     python_callable = trigger_crwaler_final_func
     # )
 
-    customer_converte
+    customer_converte>>customer_converte_monitor
     # converte_parquet >> converte_parquet_monitor >> anonimiza_inscricao >> anonimiza_inscricao_monitor
     # anonimiza_inscricao_monitor >> trigger_crwaler_inscricao
     # converte_parquet_monitor >> agrega_idade >> agrega_idade_monitor >> trigger_crwaler_final
