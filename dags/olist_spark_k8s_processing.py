@@ -51,13 +51,13 @@ with DAG(
         do_xcom_push = True
     )
 
-    customer_converte_monitor = SparkKubernetesSensor(
-        application_name = "teste",
-        task_id = 'customer_converte_monitor',
-        namespace = 'airflow',
-        application_file = "{{ task_instance.xcom_pull(task_ids='customer_converte')['metadata']['name']}}",
-        kubernetes_conn_id = "kubernetes_default"
-    )
+    # customer_converte_monitor = SparkKubernetesSensor(
+    #     application_name = "teste",
+    #     task_id = 'customer_converte_monitor',
+    #     namespace = 'airflow',
+    #     application_file = "{{ task_instance.xcom_pull(task_ids='customer_converte')['metadata']['name']}}",
+    #     kubernetes_conn_id = "kubernetes_default"
+    # )
 
     # converte_parquet = SparkKubernetesOperator(
     #     task_id = 'convert_parquet',
