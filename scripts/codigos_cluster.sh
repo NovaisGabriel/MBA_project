@@ -1,51 +1,31 @@
-# --------------------------------------------------
+# Configurações Iniciais----------------------------------------------
 aws configure
-# --------------------------------------------------
-eksctl create cluster \
---name=gabrielteste \
---managed \
---instance-types=m5.large \
---spot \
---nodes-min=2 \
---nodes-max=4 \
---region=us-east-2 \
---alb-ingress-access \
---node-private-networking \
---full-ecr-access \
---nodegroup-name=ng-gabrielteste \
---color=fabulous
-# 
-kubectl get nodes ou kubectl get namespaces.
-# 
-eksctl delete cluster \
---region us-east-2 \
---name gabrielteste \
---color=fabulous
-# 
+# Criação do cluster kubernetes---------------------------------------
+eksctl create cluster --name=gabrielteste --managed --instance-types=m5.large --spot --nodes-min=2 --nodes-max=4 --region=us-east-2 --alb-ingress-access --node-private-networking --full-ecr-access --nodegroup-name=ng-gabrielteste --color=fabulous
+kubectl get nodes
+kubectl get namespaces
+# Criação do serviço de dashboard-------------------------------------
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 kubectl get namespaces
 cd kubernetes 
 kubectl apply -f dashboard
-kubectl -n kubernetes-dashboard create token admin-user.
+kubectl -n kubernetes-dashboard create token admin-user
 kubectl proxy
-kubectl delete -f dashboard
-kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-choco install kubernetes-helm
+cd ..
+# Criação do Airflow--------------------------------------------------
+# https://stackoverflow.com/questions/50424754/pod-status-as-createcontainerconfigerror-in-minikube-cluster
+# https://stackoverflow.com/questions/67117870/helm-airflow-error-i-dont-know-why-it-doesnt-work
 kubectl get namespaces 
 kubectl create namespace airflow
 kubectl get all -n airflow
 helm repo add apache-airflow https://airflow.apache.org
 helm repo update
 cd kubernetes
-helm show values apache-airflow/airflow > airflow/myvalues.yaml
-# 
-helm install airflow apache-airflow/airflow \
--f airflow/myvalues.yaml \
--n airflow \ 
---debug
-# 
+helm show values apache-airflow/airflow > airflow/default.yaml
+helm install airflow apache-airflow/airflow -f airflow/config_values.yaml -n airflow --debug
 kubectl get pods -n airflow
 kubectl get svc -n airflow
+
 kubectl create namespace processing
 # 
 docker build -t gabrielnovais/spark-operator:v3.0.0-aws
