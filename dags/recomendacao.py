@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
 
 
-    rec = spark.read.parquet("s3a://dl-processing-zone/olist/rec/")
+    rec = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/rec/")
     columns = [
         "customer_id",
         "price",
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-delivery-zone/olist/rec/")
+        .save("s3a://dl-delivery-zone-715036709715/olist/rec/")
     )
 
     # Create test and train set
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("C:\\Users\\Gabriel\\Desktop\\backup\\Repositorios\\MBA_project\\data\\olist\\archive\\pred\\")
+        .save("s3a://dl-delivery-zone-715036709715/olist/pred/")
     )
 
     pred.show(10)

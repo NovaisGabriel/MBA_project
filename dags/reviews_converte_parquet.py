@@ -30,7 +30,7 @@ if __name__ == "__main__":
         .read
         .format("csv")
         .options(header='true', inferSchema='true', delimiter=",")
-        .load("s3a://dl-landing-zone/olist/olist_order_reviews_dataset.csv")
+        .load("s3a://dl-landing-zone-715036709715/olist/olist_order_reviews_dataset.csv")
     )
 
     df.printSchema()
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-processing-zone/olist/reviews/")
+        .save("s3a://dl-processing-zone-715036709715/olist/reviews/")
     )
 
     print("Escrito com sucesso!!!")

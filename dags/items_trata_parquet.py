@@ -31,7 +31,7 @@ if __name__ == "__main__":
         .read
         .format("csv")
         .options(header='true', inferSchema='true', delimiter=",")
-        .load("s3a://dl-processing-zone/olist/items/")
+        .load("s3a://dl-processing-zone-715036709715/olist/items/")
     )
 
     df.printSchema()
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-processing-zone/olist/tratados/items/")
+        .save("s3a://dl-processing-zone-715036709715/olist/tratados/items/")
     )
 
     print("Tratado com sucesso!!!")
