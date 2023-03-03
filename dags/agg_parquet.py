@@ -26,11 +26,11 @@ if __name__ == "__main__":
     spark.sparkContext.setLogLevel("WARN")
 
     # Pegando os dados tratados
-    items = spark.read.parquet("s3a://dl-processing-zone/olist/tratados/items/")
-    payments = spark.read.parquet("s3a://dl-processing-zone/olist/tratados/payments/")
-    customers = spark.read.parquet("s3a://dl-processing-zone/olist/tratados/custumers/")
-    reviews = spark.read.parquet("s3a://dl-processing-zone/olist/tratados/reviews/")
-    dataset = spark.read.parquet("s3a://dl-processing-zone/olist/tratados/dataset/")
+    items = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/tratados/items/")
+    payments = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/tratados/payments/")
+    customers = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/tratados/custumers/")
+    reviews = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/tratados/reviews/")
+    dataset = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/tratados/dataset/")
 
     # Agregando dados
     agg1 = items.join(payments , on=['order_id'] , how = 'left')
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-processing-zone/olist/agg/")
+        .save("s3a://dl-processing-zone-715036709715/olist/agg/")
     )
 
     (
@@ -55,11 +55,11 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-delivery-zone/olist/agg/")
+        .save("s3a://dl-delivery-zone-715036709715/olist/agg/")
     )
 
     # Construindo tabela base para a recomendação
-    rec = spark.read.parquet("s3a://dl-processing-zone/olist/agg/")
+    rec = spark.read.parquet("s3a://dl-processing-zone-715036709715/olist/agg/")
 
     columns = [
         "customer_id",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         .write
         .mode("overwrite")
         .format("parquet")
-        .save("s3a://dl-processing-zone/olist/rec/")
+        .save("s3a://dl-processing-zone-715036709715/olist/rec/")
     )
 
     print("Agregado com sucesso!!!")
