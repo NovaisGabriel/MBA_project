@@ -194,6 +194,7 @@ with DAG(
 
     # Relações de dependência:
     # ---------------------------------------------------------
+    
     begin>>[customer_converte, dataset_converte, items_converte, payments_converte, reviews_converte]
     customer_converte >> customer_trata
     dataset_converte >> dataset_trata
