@@ -50,6 +50,14 @@ if __name__ == "__main__":
         .save("s3a://dl-processing-zone/olist/agg/")
     )
 
+    (
+        agg
+        .write
+        .mode("overwrite")
+        .format("parquet")
+        .save("s3a://dl-delivery-zone/olist/agg/")
+    )
+
     # Construindo tabela base para a recomendação
     rec = spark.read.parquet("s3a://dl-processing-zone/olist/agg/")
 
